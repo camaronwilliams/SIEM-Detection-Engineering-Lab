@@ -3,7 +3,7 @@
 ## Goal
 Build and tune detections to maximize detection accuracy while minimizing noise.
 
-## What to say in an interview (talking points)
+## What
 - Started with a broad (noisy) detection hypothesis to ensure coverage.
 - Identified noise sources and tuned using: higher-confidence indicators, thresholds, allowlists, and throttling.
 - Converted raw matches into an actionable alert format (severity + recommended next step).
